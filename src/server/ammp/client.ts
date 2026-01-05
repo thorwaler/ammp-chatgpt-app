@@ -17,7 +17,7 @@ import type {
   DevicesResponse,
   WeatherDataResponse,
   ErrorResponse,
-} from './types.js';
+} from './types';
 
 export class AMPPAPIClient {
   private baseURL: string;

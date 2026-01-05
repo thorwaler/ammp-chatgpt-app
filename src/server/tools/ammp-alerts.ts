@@ -5,8 +5,8 @@
  */
 
 import { z } from 'zod';
-import { getAMPPClient } from '../ammp/client.js';
-import type { AlertSeverity, AlertStatus } from '../ammp/types.js';
+import { getAMPPClient } from '../ammp/client';
+import type { AlertSeverity, AlertStatus } from '../ammp/types';
 
 export const getAlertsTool = {
   name: 'get_ammp_alerts',

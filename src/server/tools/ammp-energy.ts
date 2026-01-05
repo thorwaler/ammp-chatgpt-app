@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { getAMPPClient } from '../ammp/client.js';
+import { getAMPPClient } from '../ammp/client';
 
 export const getEnergyDataTool = {
   name: 'get_ammp_energy_data',

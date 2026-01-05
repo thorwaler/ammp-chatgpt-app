@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { getAMPPClient } from '../ammp/client.js';
+import { getAMPPClient } from '../ammp/client';
 
 export const getWeatherDataTool = {
   name: 'get_ammp_weather',

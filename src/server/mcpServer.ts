@@ -4,13 +4,13 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { authenticateAmmpHandler } from './tools/ammp-auth.js';
-import { listSitesHandler } from './tools/ammp-sites.js';
-import { getAlertsHandler } from './tools/ammp-alerts.js';
-import { getEnergyDataHandler } from './tools/ammp-energy.js';
-import { getPerformanceHandler } from './tools/ammp-performance.js';
-import { getDevicesHandler } from './tools/ammp-devices.js';
-import { getWeatherDataHandler } from './tools/ammp-weather.js';
+import { authenticateAmmpHandler } from './tools/ammp-auth';
+import { listSitesHandler } from './tools/ammp-sites';
+import { getAlertsHandler } from './tools/ammp-alerts';
+import { getEnergyDataHandler } from './tools/ammp-energy';
+import { getPerformanceHandler } from './tools/ammp-performance';
+import { getDevicesHandler } from './tools/ammp-devices';
+import { getWeatherDataHandler } from './tools/ammp-weather';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';

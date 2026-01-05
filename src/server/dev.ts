@@ -5,7 +5,7 @@
  */
 import { createServer } from 'http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { createMcpServer } from './mcpServer.js';
+import { createMcpServer } from './mcpServer';
 
 const port = Number(process.env.PORT ?? 3000);
 const MCP_PATH = '/mcp';
