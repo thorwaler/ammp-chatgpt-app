@@ -51,7 +51,7 @@ export async function listSitesHandler() {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: `Found ${sitesResponse.sites.length} AMMP sites:\n\n${sitesList}`,
         },
       ],
@@ -63,7 +63,7 @@ export async function listSitesHandler() {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: `Error: ${errorMessage}`,
         },
       ],

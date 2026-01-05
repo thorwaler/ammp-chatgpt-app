@@ -50,7 +50,7 @@ export async function authenticateAmmpHandler(args: { api_key: string }) {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: `Successfully authenticated with AMMP API. Found ${sitesResponse.sites.length} accessible sites:\n\n${sitesResponse.sites.map(s => `• ${s.name} (${s.capacity_kw ? s.capacity_kw + ' kW' : 'Unknown capacity'})`).join('\n')}`,
         },
       ],
@@ -63,7 +63,7 @@ export async function authenticateAmmpHandler(args: { api_key: string }) {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: `Authentication failed: ${errorMessage}`,
         },
       ],

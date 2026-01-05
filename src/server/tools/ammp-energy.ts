@@ -114,7 +114,7 @@ export async function getEnergyDataHandler(args: {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: summary,
         },
       ],
@@ -130,7 +130,7 @@ export async function getEnergyDataHandler(args: {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: `Error fetching energy data: ${errorMessage}`,
         },
       ],

@@ -115,7 +115,7 @@ export async function getPerformanceHandler(args: {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: summary,
         },
       ],
@@ -127,7 +127,7 @@ export async function getPerformanceHandler(args: {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: `Error fetching performance metrics: ${errorMessage}`,
         },
       ],
