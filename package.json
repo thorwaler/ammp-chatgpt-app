@@ -1,0 +1,55 @@
+{
+  "name": "ammp-chatgpt-app",
+  "version": "1.0.0",
+  "description": "AMMP API integration for ChatGPT with interactive energy data visualization",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:local": "tsx watch src/server/dev.ts",
+    "build:widget": "tsx scripts/build-widget.ts",
+    "deploy": "npm run build && npm run build:widget && vercel --prod",
+    "deploy:preview": "npm run build && npm run build:widget && vercel",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "next": "^14.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.10.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "esbuild": "^0.24.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "ammp",
+    "solar",
+    "energy",
+    "monitoring",
+    "chatgpt",
+    "mcp",
+    "react",
+    "recharts"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/ammp-chatgpt-app.git"
+  }
+}
