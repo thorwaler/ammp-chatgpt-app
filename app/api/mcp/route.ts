@@ -7,13 +7,6 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createMcpServer } from '../../../src/server/mcpServer';
 import type { NextRequest } from 'next/server';
 
-// Disable body parsing - we need the raw request
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export async function GET(request: NextRequest) {
   return handleMcpRequest(request);
 }
