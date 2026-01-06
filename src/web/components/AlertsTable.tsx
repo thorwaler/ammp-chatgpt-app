@@ -51,7 +51,7 @@ export function AlertsTable({ siteId, compact = false, maxRows }: AlertsTablePro
   // Export to CSV
   const exportToCSV = () => {
     const headers = ['Severity', 'Site', 'Title', 'Message', 'Timestamp', 'Status', 'Category', 'Device'];
-    const rows = filteredDevices.map(alert => [
+    const rows = alerts.map(alert => [
       alert.severity,
       alert.site_name || alert.site_id,
       alert.title,
