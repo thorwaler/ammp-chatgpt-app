@@ -50,8 +50,9 @@ export class AMPPAPIClient {
    * Get current bearer token, refreshing if necessary
    */
   private async getBearerToken(): Promise<string> {
-    // If we have a valid token, return it
-    if (this.tokenInfo && Date.now() < this.tokenInfo.expiresAt - 60000) {
+    // If we have a valid token, return it (with 5 minute buffer)
+    const bufferMs = 5 * 60 * 1000; // 5 minutes
+    if (this.tokenInfo && Date.now() < this.tokenInfo.expiresAt - bufferMs) {
       return this.tokenInfo.token;
     }
 
@@ -65,16 +66,29 @@ export class AMPPAPIClient {
   }
 
   /**
+   * Parse JWT to extract expiration timestamp
+   */
+  private parseJwtExpiration(token: string): number {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000; // Convert to milliseconds
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  /**
    * Authenticate with API key and get bearer token
    */
   async authenticate(apiKey: string): Promise<TokenInfo> {
     try {
-      const response = await fetch(`${this.baseURL}/auth/token`, {
+      // AMMP requires POST to /v1/token with x-api-key header
+      const response = await fetch(`${this.baseURL}/v1/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'accept': 'application/json',
+          'x-api-key': apiKey,
         },
-        body: JSON.stringify({ api_key: apiKey }),
       });
 
       if (!response.ok) {
@@ -82,14 +96,31 @@ export class AMPPAPIClient {
           error: 'Authentication failed',
           message: `HTTP ${response.status}: ${response.statusText}`,
         }));
-        throw new Error(error.message || 'Authentication failed');
+        
+        // Provide more helpful error messages
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your AMMP API key and try again.');
+        } else if (response.status === 403) {
+          throw new Error('API key does not have permission to access AMMP API.');
+        }
+        
+        throw new Error(error.message || `Authentication failed: ${response.statusText}`);
       }
 
       const data: AuthResponse = await response.json();
       
-      // Calculate token expiry (use expires_in from API, or default to 1 hour)
-      const expiresIn = data.expires_in || 3600;
-      const expiresAt = Date.now() + expiresIn * 1000;
+      // Calculate token expiry from expires_in or parse from JWT
+      let expiresAt: number;
+      if (data.expires_in) {
+        expiresAt = Date.now() + data.expires_in * 1000;
+      } else {
+        // Fallback: parse expiration from JWT token
+        expiresAt = this.parseJwtExpiration(data.access_token);
+        if (expiresAt === 0) {
+          // If parsing fails, default to 1 hour
+          expiresAt = Date.now() + 3600 * 1000;
+        }
+      }
 
       this.tokenInfo = {
         token: data.access_token,
