@@ -19,11 +19,11 @@ const buildWidget = async () => {
       target: 'es2020',
       format: 'iife',
       write: false,
+      outdir: 'out', // Required for CSS handling
       jsx: 'automatic',
       loader: {
         '.tsx': 'tsx',
         '.ts': 'ts',
-        '.css': 'css',
       },
       external: [
         'react',
@@ -32,9 +32,12 @@ const buildWidget = async () => {
       ],
     });
 
-    // Extract JS and CSS
-    const jsCode = result.outputFiles.find(f => f.path.endsWith('.js'))?.text || '';
-    const cssCode = readFileSync('src/web/App.css', 'utf-8');
+    // Extract JS and CSS from output files
+    const jsFile = result.outputFiles.find(f => f.path.endsWith('.js'));
+    const cssFile = result.outputFiles.find(f => f.path.endsWith('.css'));
+    
+    const jsCode = jsFile?.text || '';
+    const cssCode = cssFile?.text || readFileSync('src/web/App.css', 'utf-8');
 
     // Create HTML template
     const html = `<!DOCTYPE html>
