@@ -164,9 +164,6 @@ export function EnergyChart({ siteId, compact = false, defaultInterval = 'day' }
     peakPower: Math.max(...data.map(d => d.power_kw || 0)),
   };
 
-  const ChartComponent = chartType === 'area' ? AreaChart : LineChart;
-  const DataComponent = chartType === 'area' ? Area : Line;
-
   if (loading) {
     return <div className="energy-chart-loading">Loading energy data...</div>;
   }
@@ -278,78 +275,69 @@ export function EnergyChart({ siteId, compact = false, defaultInterval = 'day' }
 
       <div className="chart-wrapper">
         <ResponsiveContainer width="100%" height={compact ? 200 : 400}>
-          <ChartComponent
-            data={data}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="timestamp"
-              tickFormatter={formatTimestamp}
-              angle={-45}
-              textAnchor="end"
-              height={60}
-            />
-            <YAxis
-              yAxisId="left"
-              label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              label={{ value: 'Power (kW)', angle: 90, position: 'insideRight' }}
-            />
-            <Tooltip
-              content={({ active, payload }) => {
+          {chartType === 'area' ? (
+            <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} angle={-45} textAnchor="end" height={60} />
+              <YAxis yAxisId="left" label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} />
+              <YAxis yAxisId="right" orientation="right" label={{ value: 'Power (kW)', angle: 90, position: 'insideRight' }} />
+              <Tooltip content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   return (
                     <div className="custom-tooltip">
-                      <p className="tooltip-time">
-                        {new Date(data.timestamp).toLocaleString()}
-                      </p>
+                      <p className="tooltip-time">{new Date(data.timestamp).toLocaleString()}</p>
                       {(metric === 'energy' || metric === 'both') && data.energy_kwh !== undefined && (
-                        <p className="tooltip-energy">
-                          Energy: {data.energy_kwh.toFixed(2)} kWh
-                        </p>
+                        <p className="tooltip-energy">Energy: {data.energy_kwh.toFixed(2)} kWh</p>
                       )}
                       {(metric === 'power' || metric === 'both') && data.power_kw !== undefined && (
-                        <p className="tooltip-power">
-                          Power: {data.power_kw.toFixed(2)} kW
-                        </p>
+                        <p className="tooltip-power">Power: {data.power_kw.toFixed(2)} kW</p>
                       )}
                     </div>
                   );
                 }
                 return null;
-              }}
-            />
-            <Legend />
-            
-            {(metric === 'energy' || metric === 'both') && (
-              <DataComponent
-                yAxisId="left"
-                type="monotone"
-                dataKey="energy_kwh"
-                name="Energy (kWh)"
-                stroke="#8884d8"
-                fill="#8884d8"
-                fillOpacity={0.6}
-              />
-            )}
-            
-            {(metric === 'power' || metric === 'both') && (
-              <DataComponent
-                yAxisId="right"
-                type="monotone"
-                dataKey="power_kw"
-                name="Power (kW)"
-                stroke="#82ca9d"
-                fill="#82ca9d"
-                fillOpacity={0.6}
-              />
-            )}
-          </ChartComponent>
+              }} />
+              <Legend />
+              {(metric === 'energy' || metric === 'both') && (
+                <Area yAxisId="left" type="monotone" dataKey="energy_kwh" name="Energy (kWh)" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+              )}
+              {(metric === 'power' || metric === 'both') && (
+                <Area yAxisId="right" type="monotone" dataKey="power_kw" name="Power (kW)" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+              )}
+            </AreaChart>
+          ) : (
+            <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} angle={-45} textAnchor="end" height={60} />
+              <YAxis yAxisId="left" label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} />
+              <YAxis yAxisId="right" orientation="right" label={{ value: 'Power (kW)', angle: 90, position: 'insideRight' }} />
+              <Tooltip content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="custom-tooltip">
+                      <p className="tooltip-time">{new Date(data.timestamp).toLocaleString()}</p>
+                      {(metric === 'energy' || metric === 'both') && data.energy_kwh !== undefined && (
+                        <p className="tooltip-energy">Energy: {data.energy_kwh.toFixed(2)} kWh</p>
+                      )}
+                      {(metric === 'power' || metric === 'both') && data.power_kw !== undefined && (
+                        <p className="tooltip-power">Power: {data.power_kw.toFixed(2)} kW</p>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              }} />
+              <Legend />
+              {(metric === 'energy' || metric === 'both') && (
+                <Line yAxisId="left" type="monotone" dataKey="energy_kwh" name="Energy (kWh)" stroke="#8884d8" strokeWidth={2} />
+              )}
+              {(metric === 'power' || metric === 'both') && (
+                <Line yAxisId="right" type="monotone" dataKey="power_kw" name="Power (kW)" stroke="#82ca9d" strokeWidth={2} />
+              )}
+            </LineChart>
+          )}
         </ResponsiveContainer>
       </div>
 
