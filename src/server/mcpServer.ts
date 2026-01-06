@@ -74,18 +74,7 @@ export function createMcpServer(): McpServer {
     {
       api_key: z.string().min(10).describe('AMMP API key provided by the user'),
     },
-    async (args) => {
-      const result = await authenticateAmmpHandler(args);
-      
-      // Add widget template to metadata
-      if (result._meta) {
-        result._meta['openai/outputTemplate'] = 'ui://widget/ammp.html';
-        result._meta['openai/toolInvocation/invoking'] = 'Authenticating with AMMP...';
-        result._meta['openai/toolInvocation/invoked'] = 'Authentication complete';
-      }
-      
-      return result;
-    }
+    authenticateAmmpHandler
   );
 
   // Tool 2: List sites
@@ -93,15 +82,7 @@ export function createMcpServer(): McpServer {
     'list_ammp_sites',
     'List all AMMP sites/facilities accessible to the authenticated user. Shows site details including name, capacity, status, and location.',
     {},
-    async () => {
-      const result = await listSitesHandler();
-      
-      if (result._meta) {
-        result._meta['openai/outputTemplate'] = 'ui://widget/ammp.html';
-      }
-      
-      return result;
-    }
+    listSitesHandler
   );
 
   // Tool 3: Get Alerts (PRIORITY #1)
@@ -116,17 +97,7 @@ export function createMcpServer(): McpServer {
       end_date: z.string().optional().describe('End date in ISO 8601 format (YYYY-MM-DD). Defaults to now'),
       limit: z.number().optional().describe('Maximum number of alerts to return. Default 100'),
     },
-    async (args) => {
-      const result = await getAlertsHandler(args);
-      
-      if (result._meta) {
-        result._meta['openai/outputTemplate'] = 'ui://widget/ammp.html';
-        result._meta['openai/toolInvocation/invoking'] = 'Fetching alerts...';
-        result._meta['openai/toolInvocation/invoked'] = 'Alerts retrieved';
-      }
-      
-      return result;
-    }
+    getAlertsHandler
   );
 
   // Tool 4: Get Energy Data (PRIORITY #2)
@@ -140,17 +111,7 @@ export function createMcpServer(): McpServer {
       interval: z.enum(['hour', 'day', 'week', 'month']).optional().describe('Time interval for aggregation. Default is "day" (24-hour periods)'),
       metrics: z.array(z.enum(['energy', 'power', 'irradiance'])).optional().describe('Metrics to include. Default includes energy and power'),
     },
-    async (args) => {
-      const result = await getEnergyDataHandler(args);
-      
-      if (result._meta) {
-        result._meta['openai/outputTemplate'] = 'ui://widget/ammp.html';
-        result._meta['openai/toolInvocation/invoking'] = 'Fetching energy data...';
-        result._meta['openai/toolInvocation/invoked'] = 'Energy data retrieved';
-      }
-      
-      return result;
-    }
+    getEnergyDataHandler
   );
 
   // Tool 5: Get Performance Metrics (PRIORITY #3)
@@ -163,17 +124,7 @@ export function createMcpServer(): McpServer {
       end_date: z.string().describe('End date in ISO 8601 format (YYYY-MM-DD)'),
       aggregation: z.enum(['daily', 'weekly', 'monthly']).optional().describe('Aggregation level. Default is daily'),
     },
-    async (args) => {
-      const result = await getPerformanceHandler(args);
-      
-      if (result._meta) {
-        result._meta['openai/outputTemplate'] = 'ui://widget/ammp.html';
-        result._meta['openai/toolInvocation/invoking'] = 'Fetching performance metrics...';
-        result._meta['openai/toolInvocation/invoked'] = 'Performance metrics retrieved';
-      }
-      
-      return result;
-    }
+    getPerformanceHandler
   );
 
   // Tool 6: Get Devices
@@ -183,15 +134,7 @@ export function createMcpServer(): McpServer {
     {
       site_id: z.string().describe('Site ID to fetch devices for'),
     },
-    async (args) => {
-      const result = await getDevicesHandler(args);
-      
-      if (result._meta) {
-        result._meta['openai/outputTemplate'] = 'ui://widget/ammp.html';
-      }
-      
-      return result;
-    }
+    getDevicesHandler
   );
 
   // Tool 7: Get Weather Data
@@ -203,15 +146,7 @@ export function createMcpServer(): McpServer {
       start_date: z.string().describe('Start date in ISO 8601 format (YYYY-MM-DD)'),
       end_date: z.string().describe('End date in ISO 8601 format (YYYY-MM-DD)'),
     },
-    async (args) => {
-      const result = await getWeatherDataHandler(args);
-      
-      if (result._meta) {
-        result._meta['openai/outputTemplate'] = 'ui://widget/ammp.html';
-      }
-      
-      return result;
-    }
+    getWeatherDataHandler
   );
 
   return server;
