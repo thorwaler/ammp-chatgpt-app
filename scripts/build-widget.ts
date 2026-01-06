@@ -4,7 +4,7 @@
  */
 
 import * as esbuild from 'esbuild';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 const buildWidget = async () => {
@@ -68,7 +68,12 @@ ${jsCode}
 </html>`;
 
     // Write to public directory
-    const outputPath = join(process.cwd(), 'public', 'widget.html');
+    const publicDir = join(process.cwd(), 'public');
+    const outputPath = join(publicDir, 'widget.html');
+    
+    // Ensure public directory exists
+    mkdirSync(publicDir, { recursive: true });
+    
     writeFileSync(outputPath, html);
 
     console.log('✅ Widget built successfully!');
