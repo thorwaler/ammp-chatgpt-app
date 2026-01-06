@@ -13,7 +13,7 @@ import { getAlertsHandler } from '../../../src/server/tools/ammp-alerts';
 import { getEnergyDataHandler } from '../../../src/server/tools/ammp-energy';
 import { getPerformanceHandler } from '../../../src/server/tools/ammp-performance';
 import { getDevicesHandler } from '../../../src/server/tools/ammp-devices';
-import { getWeatherHandler } from '../../../src/server/tools/ammp-weather';
+import { getWeatherDataHandler } from '../../../src/server/tools/ammp-weather';
 
 // Tool definitions
 const TOOLS = [
@@ -163,7 +163,7 @@ const TOOL_HANDLERS: Record<string, Function> = {
   get_ammp_energy_data: getEnergyDataHandler,
   get_ammp_performance: getPerformanceHandler,
   get_ammp_devices: getDevicesHandler,
-  get_ammp_weather: getWeatherHandler,
+  get_ammp_weather: getWeatherDataHandler,
 };
 
 // CORS headers
