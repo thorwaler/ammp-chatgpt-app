@@ -51,18 +51,18 @@ export interface Asset {
   grid_type?: 'grid-tied' | 'off-grid' | 'hybrid';
 }
 
+// For backward compatibility with existing code
 export interface AssetsResponse {
-  // API returns array directly, not wrapped
-  assets?: Asset[];  // For compatibility
-  total?: number;    // For compatibility
+  assets?: Asset[];
+  total?: number;
   // Or it might return the array directly
   [key: number]: Asset;
   length?: number;
 }
 
-// For backward compatibility
+// Alias for backward compatibility
+export type SitesResponse = Asset[];
 export type Site = Asset;
-export type SitesResponse = AssetsResponse;
 
 // Energy Data Types
 export interface EnergyDataPoint {
@@ -230,5 +230,6 @@ export interface ErrorResponse {
 // Utility Types
 export type Interval = 'hour' | 'day' | 'week' | 'month';
 export type Severity = 'error' | 'warning' | 'info';
+export type AlertSeverity = Severity; // Alias for backward compatibility
 export type AlertStatus = 'active' | 'resolved' | 'acknowledged';
 export type DeviceType = 'inverter' | 'meter' | 'battery' | 'genset' | 'sensor';
