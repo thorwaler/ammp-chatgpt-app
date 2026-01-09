@@ -23,18 +23,23 @@ export async function listSitesHandler() {
       throw new Error('Not authenticated. Please authenticate with your AMMP API key first.');
     }
     
-    const sitesResponse = await client.getSites();
+    const assets = await client.getSites();  // Returns Asset[]
     
     const structuredContent = {
       success: true,
-      total_sites: sitesResponse.total || sitesResponse.sites.length,
-      sites: sitesResponse.sites.map(site => ({
-        id: site.id,
-        name: site.name,
-        capacity_kw: site.capacity_kw,
-        status: site.status,
-        location: site.location,
-        commissioned_date: site.commissioned_date,
+      total_sites: assets.length,
+      sites: assets.map(asset => ({
+        id: asset.asset_id,
+        name: asset.asset_name,
+        long_name: asset.long_name,
+        capacity_kw: asset.total_pv_power,
+        location: {
+          latitude: asset.latitude,
+          longitude: asset.longitude,
+          place: asset.place,
+          region: asset.region,
+          country: asset.country_code,
+        },
       })),
     };
 

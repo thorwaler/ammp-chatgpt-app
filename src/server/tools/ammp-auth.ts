@@ -21,20 +21,20 @@ export async function authenticateAmmpHandler(args: { api_key: string }) {
     // Authenticate and get token
     const tokenInfo = await client.authenticate(args.api_key);
     
-    // Fetch available sites to confirm authentication works
-    const sitesResponse = await client.getSites();
+    // Fetch available assets to confirm authentication works
+    const assets = await client.getAssets();
     
     // Prepare structured content for the model
     const structuredContent = {
       success: true,
       authenticated: true,
       token_expires_at: new Date(tokenInfo.expiresAt).toISOString(),
-      sites_count: sitesResponse.total || sitesResponse.sites.length,
-      sites: sitesResponse.sites.map(site => ({
-        id: site.id,
-        name: site.name,
-        capacity_kw: site.capacity_kw,
-        status: site.status,
+      assets_count: assets.length,
+      assets: assets.map(asset => ({
+        id: asset.asset_id,
+        name: asset.asset_name,
+        capacity_kw: asset.total_pv_power,
+        location: `${asset.place}, ${asset.country_code}`,
       })),
     };
 
@@ -44,7 +44,7 @@ export async function authenticateAmmpHandler(args: { api_key: string }) {
         token: tokenInfo.token,
         expires_at: tokenInfo.expiresAt,
       },
-      full_sites_data: sitesResponse.sites,
+      full_assets_data: assets,
     };
 
     return {

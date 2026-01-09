@@ -1,6 +1,6 @@
 /**
  * AMMP API TypeScript Types
- * Based on https://data-api.ammp.io/docs
+ * Based on https://data-api.ammp.io/docs (actual API)
  */
 
 // Authentication
@@ -10,29 +10,59 @@ export interface AuthRequest {
 
 export interface AuthResponse {
   access_token: string;
-  token_type: string;
-  expires_in: number;
+  token_type?: string;
+  expires_in?: number;
 }
 
-// Site/Facility Types
-export interface Site {
-  id: string;
-  name: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-    address?: string;
-  };
-  capacity_kw?: number;
-  status?: 'active' | 'inactive' | 'maintenance';
-  timezone?: string;
-  commissioned_date?: string;
+export interface TokenInfo {
+  token: string;
+  expiresAt: number;
 }
 
-export interface SitesResponse {
-  sites: Site[];
-  total: number;
+export interface AMPPClientConfig {
+  baseURL?: string;
+  apiKey?: string;
+  bearerToken?: string;
 }
+
+// Asset Types (formerly "Site")
+// Based on actual API response from https://data-api.ammp.io/docs
+export interface Asset {
+  asset_id: string;
+  asset_name: string;
+  long_name: string;
+  latitude: number;
+  longitude: number;
+  total_pv_power: number;
+  region: string;
+  place: string;
+  country_code: string;
+  beta: number;
+  tref: number;
+  tags: Record<string, any>;
+  asset_specific_params: Record<string, any>;
+  co2_offset_factor: number;
+  modeled_loss: number;
+  expected_pr: number;
+  warnings: string[];
+  org_id: string;
+  asset_timezone?: string;
+  created?: string;
+  grid_type?: 'grid-tied' | 'off-grid' | 'hybrid';
+}
+
+export interface AssetsResponse {
+  // API returns array directly, not wrapped
+  assets?: Asset[];  // For compatibility
+  total?: number;    // For compatibility
+  // Or it might return the array directly
+  [key: number]: Asset;
+  length?: number;
+}
+
+// For backward compatibility
+export type Site = Asset;
+export type SitesResponse = AssetsResponse;
 
 // Energy Data Types
 export interface EnergyDataPoint {
@@ -43,114 +73,107 @@ export interface EnergyDataPoint {
 }
 
 export interface EnergyDataRequest {
-  site_id?: string; // Optional - if omitted, returns portfolio data
-  start_date: string; // ISO 8601 format
+  asset_id?: string; // Changed from site_id
+  start_date: string;
   end_date: string;
   interval?: 'hour' | 'day' | 'week' | 'month';
-  metrics?: string[]; // e.g., ['energy', 'power', 'irradiance']
+  metrics?: string[];
 }
 
 export interface EnergyDataResponse {
-  site_id?: string;
-  site_name?: string;
   data: EnergyDataPoint[];
-  units: {
-    energy?: string;
-    power?: string;
-    irradiance?: string;
-  };
-  interval: string;
+  total_energy_kwh?: number;
+  asset_id?: string;
 }
 
-// Alert Types
-export type AlertSeverity = 'error' | 'warning' | 'info';
-export type AlertStatus = 'active' | 'resolved' | 'acknowledged';
-
+// Alerts / Tickets Types
 export interface Alert {
   id: string;
-  site_id: string;
-  site_name?: string;
-  severity: AlertSeverity;
-  status: AlertStatus;
+  asset_id: string;
+  asset_name?: string;
   title: string;
-  message: string;
-  timestamp: string;
+  description?: string;
+  severity: 'error' | 'warning' | 'info';
+  status: 'active' | 'resolved' | 'acknowledged';
+  created_at: string;
+  updated_at?: string;
   resolved_at?: string;
-  category?: string;
-  device_id?: string;
-  metadata?: Record<string, unknown>;
 }
 
 export interface AlertsRequest {
-  site_id?: string; // Optional - if omitted, returns all sites
+  asset_id?: string; // Changed from site_id
+  asset_ids?: string[]; // For multiple assets
   start_date?: string;
   end_date?: string;
-  severity?: AlertSeverity[];
-  status?: AlertStatus[];
+  severity?: ('error' | 'warning' | 'info')[];
+  status?: ('active' | 'resolved' | 'acknowledged')[];
   limit?: number;
   offset?: number;
 }
 
 export interface AlertsResponse {
-  alerts: Alert[];
+  tickets: Alert[]; // Note: API calls them "tickets"
   total: number;
-  has_more: boolean;
+  has_more?: boolean;
 }
 
-// Performance Metrics Types
+// Performance / KPI Types
 export interface PerformanceMetrics {
-  site_id: string;
-  site_name?: string;
-  period: {
-    start: string;
-    end: string;
-  };
-  availability_percent?: number;
-  capacity_factor_percent?: number;
-  performance_ratio_percent?: number;
-  total_energy_kwh?: number;
-  expected_energy_kwh?: number;
-  downtime_hours?: number;
-  specific_yield_kwh_kwp?: number;
+  performance_ratio?: number;
+  availability?: number;
+  capacity_factor?: number;
+  specific_yield?: number;
+  timestamp?: string;
 }
 
 export interface PerformanceRequest {
-  site_id?: string; // Optional - if omitted, returns portfolio
+  asset_id?: string; // Changed from site_id
   start_date: string;
   end_date: string;
-  aggregation?: 'daily' | 'weekly' | 'monthly';
+  aggregation?: 'daily' | 'monthly' | 'total';
 }
 
 export interface PerformanceResponse {
-  metrics: PerformanceMetrics[];
-  portfolio_summary?: {
-    total_energy_kwh: number;
-    average_availability_percent: number;
-    average_performance_ratio_percent: number;
-    total_capacity_kw: number;
-  };
+  data: PerformanceMetrics[];
+  averages?: PerformanceMetrics;
+  asset_id?: string;
 }
 
-// Device/Inverter Types
+// Device Types
 export interface Device {
-  id: string;
-  site_id: string;
-  name: string;
-  type: 'inverter' | 'meter' | 'sensor' | 'tracker' | 'other';
+  device_id: string;
+  device_name: string;
+  serial_no?: string;
+  device_type?: 'pv-inverter' | 'battery-system' | 'meter' | 'genset' | 'sensor';
   manufacturer?: string;
   model?: string;
-  capacity_kw?: number;
-  status: 'online' | 'offline' | 'fault';
+  status?: 'online' | 'offline' | 'error';
   last_communication?: string;
 }
 
 export interface DevicesResponse {
+  asset_id: string;
+  asset_name: string;
+  long_name: string;
+  latitude: number;
+  longitude: number;
+  total_pv_power: number;
+  region: string;
+  place: string;
+  country_code: string;
+  beta: number;
+  tref: number;
+  tags: Record<string, any>;
+  asset_specific_params: Record<string, any>;
+  co2_offset_factor: number;
+  modeled_loss: number;
+  expected_pr: number;
+  warnings: string[];
   devices: Device[];
-  total: number;
 }
 
-// Weather Data Types
-export interface WeatherData {
+// Weather / Environment Types
+export interface WeatherDataPoint {
   timestamp: string;
   temperature_c?: number;
   irradiance_w_m2?: number;
@@ -160,26 +183,52 @@ export interface WeatherData {
 }
 
 export interface WeatherDataResponse {
-  site_id: string;
-  data: WeatherData[];
+  data: WeatherDataPoint[];
+  asset_id?: string;
+}
+
+// Status Types
+export interface StatusInfo {
+  level: 'ok' | 'warning' | 'error';
+  message: string;
+  timestamp: string;
+  asset_id: string;
+}
+
+export interface StatusInfoResponse {
+  status: StatusInfo;
+  asset_id: string;
+}
+
+// Asset Group Types
+export interface AssetGroup {
+  id: string;
+  name: string;
+  description?: string;
+  asset_count?: number;
+}
+
+export interface AssetGroupsResponse {
+  groups: AssetGroup[];
+  total: number;
+}
+
+export interface AssetGroupMembersResponse {
+  assets: Asset[];
+  group_id: string;
+  total: number;
 }
 
 // Error Response
 export interface ErrorResponse {
   error: string;
   message: string;
-  details?: unknown;
   status_code?: number;
+  details?: any;
 }
 
-// API Client Types
-export interface AMPPClientConfig {
-  apiKey?: string;
-  bearerToken?: string;
-  baseURL?: string;
-}
-
-export interface TokenInfo {
-  token: string;
-  expiresAt: number; // Unix timestamp
-}
+// Utility Types
+export type Interval = 'hour' | 'day' | 'week' | 'month';
+export type Severity = 'error' | 'warning' | 'info';
+export type AlertStatus = 'active' | 'resolved' | 'acknowledged';
+export type DeviceType = 'inverter' | 'meter' | 'battery' | 'genset' | 'sensor';

@@ -1,13 +1,14 @@
 /**
- * AMMP API Client
- * Handles authentication, token management, and API requests
+ * AMMP API Client - Updated for Actual API Structure
+ * Based on https://data-api.ammp.io/docs
  */
 
 import type {
   AuthResponse,
   TokenInfo,
   AMPPClientConfig,
-  SitesResponse,
+  AssetsResponse,
+  Asset,
   EnergyDataRequest,
   EnergyDataResponse,
   AlertsRequest,
@@ -29,34 +30,28 @@ export class AMPPAPIClient {
     this.apiKey = config.apiKey;
     
     if (config.bearerToken) {
-      // If a bearer token is provided, store it with a far future expiry
-      // (will be updated when we get actual expiry from API)
       this.tokenInfo = {
         token: config.bearerToken,
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours default
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
       };
     }
   }
 
-  /**
-   * Set API key and clear existing token
-   */
   setApiKey(apiKey: string): void {
     this.apiKey = apiKey;
     this.tokenInfo = undefined;
   }
 
-  /**
-   * Get current bearer token, refreshing if necessary
-   */
+  isAuthenticated(): boolean {
+    return !!this.tokenInfo || !!this.apiKey;
+  }
+
   private async getBearerToken(): Promise<string> {
-    // If we have a valid token, return it (with 5 minute buffer)
-    const bufferMs = 5 * 60 * 1000; // 5 minutes
+    const bufferMs = 5 * 60 * 1000;
     if (this.tokenInfo && Date.now() < this.tokenInfo.expiresAt - bufferMs) {
       return this.tokenInfo.token;
     }
 
-    // Otherwise, authenticate to get a new token
     if (!this.apiKey) {
       throw new Error('No API key configured. Please authenticate first.');
     }
@@ -65,24 +60,19 @@ export class AMPPAPIClient {
     return authResponse.token;
   }
 
-  /**
-   * Parse JWT to extract expiration timestamp
-   */
   private parseJwtExpiration(token: string): number {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000; // Convert to milliseconds
+      return payload.exp * 1000;
     } catch (error) {
       return 0;
     }
   }
 
-  /**
-   * Authenticate with API key and get bearer token
-   */
   async authenticate(apiKey: string): Promise<TokenInfo> {
     try {
-      // AMMP requires POST to /v1/token with x-api-key header
+      console.log('[AMMP Auth] Authenticating with API key');
+      
       const response = await fetch(`${this.baseURL}/v1/token`, {
         method: 'POST',
         headers: {
@@ -91,33 +81,37 @@ export class AMPPAPIClient {
         },
       });
 
+      console.log('[AMMP Auth] Response status:', response.status);
+
       if (!response.ok) {
-        const error: ErrorResponse = await response.json().catch(() => ({
-          error: 'Authentication failed',
-          message: `HTTP ${response.status}: ${response.statusText}`,
-        }));
-        
-        // Provide more helpful error messages
+        let errorDetails = '';
+        try {
+          errorDetails = await response.text();
+          console.log('[AMMP Auth] Error response:', errorDetails);
+        } catch (e) {
+          // Ignore
+        }
+
         if (response.status === 401) {
           throw new Error('Invalid API key. Please check your AMMP API key and try again.');
         } else if (response.status === 403) {
           throw new Error('API key does not have permission to access AMMP API.');
+        } else if (response.status === 404) {
+          throw new Error(`Authentication endpoint not found (404). Details: ${errorDetails}`);
         }
         
-        throw new Error(error.message || `Authentication failed: ${response.statusText}`);
+        throw new Error(`Authentication failed (${response.status}): ${response.statusText}`);
       }
 
       const data: AuthResponse = await response.json();
+      console.log('[AMMP Auth] Successfully received token');
       
-      // Calculate token expiry from expires_in or parse from JWT
       let expiresAt: number;
       if (data.expires_in) {
         expiresAt = Date.now() + data.expires_in * 1000;
       } else {
-        // Fallback: parse expiration from JWT token
         expiresAt = this.parseJwtExpiration(data.access_token);
         if (expiresAt === 0) {
-          // If parsing fails, default to 1 hour
           expiresAt = Date.now() + 3600 * 1000;
         }
       }
@@ -131,6 +125,7 @@ export class AMPPAPIClient {
 
       return this.tokenInfo;
     } catch (error) {
+      console.error('[AMMP Auth] Authentication error:', error);
       if (error instanceof Error) {
         throw error;
       }
@@ -138,9 +133,6 @@ export class AMPPAPIClient {
     }
   }
 
-  /**
-   * Make an authenticated API request
-   */
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -163,7 +155,6 @@ export class AMPPAPIClient {
         status_code: response.status,
       }));
       
-      // If unauthorized, clear token and throw
       if (response.status === 401) {
         this.tokenInfo = undefined;
         throw new Error('Authentication expired. Please re-authenticate.');
@@ -175,24 +166,47 @@ export class AMPPAPIClient {
     return response.json();
   }
 
+  // ========== METADATA ENDPOINTS ==========
+
   /**
-   * Get all sites/facilities
+   * Get all assets (formerly "sites")
+   * API returns array directly: Asset[]
    */
-  async getSites(): Promise<SitesResponse> {
-    return this.request<SitesResponse>('/sites');
+  async getAssets(): Promise<Asset[]> {
+    return this.request<Asset[]>('/v1/assets');
   }
 
   /**
-   * Get site details by ID
+   * Get asset details by ID
    */
-  async getSiteDetails(siteId: string): Promise<any> {
-    return this.request(`/sites/${siteId}`);
+  async getAssetDetails(assetId: string): Promise<Asset> {
+    return this.request<Asset>(`/v1/assets/${assetId}`);
   }
 
   /**
-   * Get energy data for a site or portfolio
+   * Get devices for an asset
    */
-  async getEnergyData(request: EnergyDataRequest): Promise<EnergyDataResponse> {
+  async getAssetDevices(assetId: string): Promise<DevicesResponse> {
+    return this.request<DevicesResponse>(`/v1/assets/${assetId}/devices`);
+  }
+
+  // ========== ASSET DATA ENDPOINTS ==========
+
+  /**
+   * Get most recent power data for an asset
+   */
+  async getMostRecentData(assetId: string): Promise<any> {
+    return this.request(`/v1/assets/${assetId}/most-recent`);
+  }
+
+  /**
+   * Get historic energy data for an asset
+   */
+  async getHistoricEnergy(request: EnergyDataRequest): Promise<EnergyDataResponse> {
+    if (!request.asset_id) {
+      throw new Error('asset_id is required for energy data');
+    }
+
     const params = new URLSearchParams();
     params.append('start_date', request.start_date);
     params.append('end_date', request.end_date);
@@ -200,124 +214,203 @@ export class AMPPAPIClient {
     if (request.interval) {
       params.append('interval', request.interval);
     }
-    
-    if (request.metrics) {
-      params.append('metrics', request.metrics.join(','));
-    }
 
-    const endpoint = request.site_id
-      ? `/sites/${request.site_id}/energy?${params}`
-      : `/portfolio/energy?${params}`;
-
-    return this.request<EnergyDataResponse>(endpoint);
+    return this.request<EnergyDataResponse>(
+      `/v1/assets/${request.asset_id}/historic-energy?${params}`
+    );
   }
 
   /**
-   * Get alerts for a site or all sites
+   * Get historic power data for an asset
    */
-  async getAlerts(request: AlertsRequest = {}): Promise<AlertsResponse> {
+  async getHistoricPower(assetId: string, startDate: string, endDate: string): Promise<any> {
     const params = new URLSearchParams();
-    
-    if (request.start_date) params.append('start_date', request.start_date);
-    if (request.end_date) params.append('end_date', request.end_date);
-    if (request.severity) params.append('severity', request.severity.join(','));
-    if (request.status) params.append('status', request.status.join(','));
-    if (request.limit) params.append('limit', String(request.limit));
-    if (request.offset) params.append('offset', String(request.offset));
+    params.append('start_date', startDate);
+    params.append('end_date', endDate);
 
-    const endpoint = request.site_id
-      ? `/sites/${request.site_id}/alerts?${params}`
-      : `/alerts?${params}`;
-
-    return this.request<AlertsResponse>(endpoint);
+    return this.request(`/v1/assets/${assetId}/historic-power?${params}`);
   }
 
   /**
-   * Get performance metrics for a site or portfolio
+   * Get historic environment data (weather) for an asset
    */
-  async getPerformance(request: PerformanceRequest): Promise<PerformanceResponse> {
-    const params = new URLSearchParams();
-    params.append('start_date', request.start_date);
-    params.append('end_date', request.end_date);
-    
-    if (request.aggregation) {
-      params.append('aggregation', request.aggregation);
-    }
-
-    const endpoint = request.site_id
-      ? `/sites/${request.site_id}/performance?${params}`
-      : `/portfolio/performance?${params}`;
-
-    return this.request<PerformanceResponse>(endpoint);
-  }
-
-  /**
-   * Get devices/inverters for a site
-   */
-  async getDevices(siteId: string): Promise<DevicesResponse> {
-    return this.request<DevicesResponse>(`/sites/${siteId}/devices`);
-  }
-
-  /**
-   * Get weather data for a site
-   */
-  async getWeatherData(
-    siteId: string,
-    startDate: string,
-    endDate: string
-  ): Promise<WeatherDataResponse> {
+  async getHistoricEnvironment(assetId: string, startDate: string, endDate: string): Promise<WeatherDataResponse> {
     const params = new URLSearchParams();
     params.append('start_date', startDate);
     params.append('end_date', endDate);
 
     return this.request<WeatherDataResponse>(
-      `/sites/${siteId}/weather?${params}`
+      `/v1/assets/${assetId}/historic-environment-data?${params}`
     );
   }
 
+  // ========== TECHNICAL KPIs ENDPOINTS ==========
+
   /**
-   * Check if client is authenticated
+   * Get PV performance metrics (Performance Ratio, etc.)
    */
-  isAuthenticated(): boolean {
-    return !!this.tokenInfo && Date.now() < this.tokenInfo.expiresAt;
+  async getTechnicalKpiPerformance(request: PerformanceRequest): Promise<PerformanceResponse> {
+    if (!request.asset_id) {
+      throw new Error('asset_id is required for performance data');
+    }
+
+    const params = new URLSearchParams();
+    params.append('start_date', request.start_date);
+    params.append('end_date', request.end_date);
+
+    return this.request<PerformanceResponse>(
+      `/v1/assets/${request.asset_id}/technical-kpis/pv-performance?${params}`
+    );
+  }
+
+  // ========== STATUS ENDPOINTS ==========
+
+  /**
+   * Get last data received timestamp for an asset
+   */
+  async getLastDataReceived(assetId: string): Promise<any> {
+    return this.request(`/v1/assets/${assetId}/last-data-received`);
   }
 
   /**
-   * Get current token info (for storage)
+   * Get latest status info for an asset
    */
-  getTokenInfo(): TokenInfo | undefined {
-    return this.tokenInfo;
+  async getStatusInfoLatest(assetId: string): Promise<any> {
+    return this.request(`/v1/assets/${assetId}/status-info-latest`);
   }
 
   /**
-   * Clear authentication
+   * Get status info log for an asset
    */
-  clearAuth(): void {
-    this.apiKey = undefined;
-    this.tokenInfo = undefined;
+  async getStatusInfoLog(assetId: string, startDate?: string, endDate?: string): Promise<any> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+
+    const queryString = params.toString();
+    const endpoint = queryString
+      ? `/v1/assets/${assetId}/status-info-log?${queryString}`
+      : `/v1/assets/${assetId}/status-info-log`;
+
+    return this.request(endpoint);
+  }
+
+  // ========== TICKETING ENDPOINTS (Alerts) ==========
+
+  /**
+   * Get tickets (alerts) - POST method with filters
+   */
+  async getTickets(request: AlertsRequest = {}): Promise<AlertsResponse> {
+    const body: any = {};
+    
+    if (request.asset_id) {
+      body.asset_ids = [request.asset_id];
+    }
+    
+    if (request.start_date) body.start_date = request.start_date;
+    if (request.end_date) body.end_date = request.end_date;
+    if (request.severity) body.severity = request.severity;
+    if (request.status) body.status = request.status;
+    if (request.limit) body.limit = request.limit;
+    if (request.offset) body.offset = request.offset;
+
+    return this.request<AlertsResponse>('/v1/tickets/list', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  // ========== ACCESS CONTROL ENDPOINTS ==========
+
+  /**
+   * Get asset groups (for portfolio view)
+   */
+  async getAssetGroups(): Promise<any> {
+    return this.request('/v1/asset_groups');
+  }
+
+  /**
+   * Get members of an asset group
+   */
+  async getAssetGroupMembers(groupId: string): Promise<any> {
+    return this.request(`/v1/asset_groups/${groupId}/members`);
+  }
+
+  // ========== LEGACY METHOD ALIASES ==========
+  // For backward compatibility with existing tool handlers
+
+  /**
+   * @deprecated Use getAssets() instead
+   */
+  async getSites(): Promise<Asset[]> {
+    return this.getAssets();
+  }
+
+  /**
+   * @deprecated Use getHistoricEnergy() instead
+   */
+  async getEnergyData(request: EnergyDataRequest): Promise<EnergyDataResponse> {
+    // Map site_id to asset_id for backward compatibility
+    const mappedRequest = {
+      ...request,
+      asset_id: request.asset_id || (request as any).site_id,
+    };
+    return this.getHistoricEnergy(mappedRequest);
+  }
+
+  /**
+   * @deprecated Use getTickets() instead
+   */
+  async getAlerts(request: AlertsRequest = {}): Promise<AlertsResponse> {
+    // Map site_id to asset_id for backward compatibility
+    const mappedRequest = {
+      ...request,
+      asset_id: request.asset_id || (request as any).site_id,
+    };
+    return this.getTickets(mappedRequest);
+  }
+
+  /**
+   * @deprecated Use getTechnicalKpiPerformance() instead
+   */
+  async getPerformance(request: PerformanceRequest): Promise<PerformanceResponse> {
+    // Map site_id to asset_id for backward compatibility
+    const mappedRequest = {
+      ...request,
+      asset_id: request.asset_id || (request as any).site_id,
+    };
+    return this.getTechnicalKpiPerformance(mappedRequest);
+  }
+
+  /**
+   * @deprecated Use getAssetDevices() instead
+   */
+  async getDevices(assetId: string): Promise<DevicesResponse> {
+    return this.getAssetDevices(assetId);
+  }
+
+  /**
+   * @deprecated Use getHistoricEnvironment() instead
+   */
+  async getWeatherData(
+    assetId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<WeatherDataResponse> {
+    return this.getHistoricEnvironment(assetId, startDate, endDate);
   }
 }
 
-/**
- * Create a singleton instance for use across tools
- */
-let clientInstance: AMPPAPIClient | undefined;
+// Singleton instance
+let clientInstance: AMPPAPIClient | null = null;
 
 export function getAMPPClient(config?: AMPPClientConfig): AMPPAPIClient {
   if (!clientInstance) {
     clientInstance = new AMPPAPIClient(config);
-  } else if (config) {
-    // Update existing client with new config
-    if (config.apiKey) {
-      clientInstance.setApiKey(config.apiKey);
-    }
   }
   return clientInstance;
 }
 
-export function clearAMPPClient(): void {
-  if (clientInstance) {
-    clientInstance.clearAuth();
-  }
-  clientInstance = undefined;
+export function resetAMPPClient(): void {
+  clientInstance = null;
 }
