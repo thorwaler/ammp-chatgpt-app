@@ -74,6 +74,7 @@ export interface EnergyDataPoint {
 
 export interface EnergyDataRequest {
   asset_id?: string; // Changed from site_id
+  site_id?: string; // @deprecated - for backward compatibility, use asset_id
   start_date: string;
   end_date: string;
   interval?: 'hour' | 'day' | 'week' | 'month';
@@ -102,6 +103,7 @@ export interface Alert {
 
 export interface AlertsRequest {
   asset_id?: string; // Changed from site_id
+  site_id?: string; // @deprecated - for backward compatibility, use asset_id
   asset_ids?: string[]; // For multiple assets
   start_date?: string;
   end_date?: string;
@@ -128,6 +130,7 @@ export interface PerformanceMetrics {
 
 export interface PerformanceRequest {
   asset_id?: string; // Changed from site_id
+  site_id?: string; // @deprecated - for backward compatibility, use asset_id
   start_date: string;
   end_date: string;
   aggregation?: 'daily' | 'monthly' | 'total';
