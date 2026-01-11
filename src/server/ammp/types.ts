@@ -99,6 +99,11 @@ export interface Alert {
   created_at: string;
   updated_at?: string;
   resolved_at?: string;
+  // Backward compatibility aliases
+  site_id?: string; // Alias for asset_id
+  site_name?: string; // Alias for asset_name
+  message?: string; // Alias for description
+  timestamp?: string; // Alias for created_at
 }
 
 export interface AlertsRequest {
@@ -114,7 +119,8 @@ export interface AlertsRequest {
 }
 
 export interface AlertsResponse {
-  tickets: Alert[]; // Note: API calls them "tickets"
+  tickets: Alert[]; // Actual API field name
+  alerts: Alert[]; // Alias for backward compatibility
   total: number;
   has_more?: boolean;
 }

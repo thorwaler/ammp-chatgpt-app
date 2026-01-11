@@ -314,10 +314,27 @@ export class AMPPAPIClient {
     if (request.limit) body.limit = request.limit;
     if (request.offset) body.offset = request.offset;
 
-    return this.request<AlertsResponse>('/v1/tickets/list', {
+    const response = await this.request<any>('/v1/tickets/list', {
       method: 'POST',
       body: JSON.stringify(body),
     });
+
+    // Map API tickets to Alert format with backward compatibility aliases
+    const tickets = (response.tickets || []).map((ticket: any) => ({
+      ...ticket,
+      // Backward compatibility aliases
+      site_id: ticket.asset_id,
+      site_name: ticket.asset_name,
+      message: ticket.description,
+      timestamp: ticket.created_at,
+    }));
+
+    return {
+      tickets,
+      alerts: tickets, // Alias for backward compatibility
+      total: response.total || 0,
+      has_more: response.has_more,
+    };
   }
 
   // ========== ACCESS CONTROL ENDPOINTS ==========
