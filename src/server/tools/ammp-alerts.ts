@@ -71,7 +71,10 @@ export async function getAlertsHandler(args: {
       if (severityDiff !== 0) return severityDiff;
       
       // Same severity, sort by timestamp (newest first)
-      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      // Use timestamp or created_at, fallback to 0 if neither exists
+      const aTime = new Date(a.timestamp || a.created_at || 0).getTime();
+      const bTime = new Date(b.timestamp || b.created_at || 0).getTime();
+      return bTime - aTime;
     });
 
     const structuredContent = {
@@ -116,7 +119,7 @@ export async function getAlertsHandler(args: {
       
       topAlerts.forEach((alert, idx) => {
         const icon = alert.severity === 'error' ? '🔴' : alert.severity === 'warning' ? '🟡' : '🔵';
-        const timestamp = new Date(alert.timestamp).toLocaleString();
+        const timestamp = new Date(alert.timestamp || alert.created_at || 0).toLocaleString();
         const site = alert.site_name || alert.site_id;
         summary += `${idx + 1}. ${icon} ${alert.title}\n`;
         summary += `   Site: ${site} | ${timestamp}\n`;
