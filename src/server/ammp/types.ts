@@ -99,6 +99,8 @@ export interface Alert {
   created_at: string;
   updated_at?: string;
   resolved_at?: string;
+  category?: string;
+  device_id?: string;
   // Backward compatibility aliases
   site_id?: string; // Alias for asset_id
   site_name?: string; // Alias for asset_name
