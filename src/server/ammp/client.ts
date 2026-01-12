@@ -187,7 +187,21 @@ export class AMPPAPIClient {
    * Get devices for an asset
    */
   async getAssetDevices(assetId: string): Promise<DevicesResponse> {
-    return this.request<DevicesResponse>(`/v1/assets/${assetId}/devices`);
+    const response = await this.request<any>(`/v1/assets/${assetId}/devices`);
+    
+    // Map devices to include backward compatibility aliases
+    const devices = (response.devices || []).map((device: any) => ({
+      ...device,
+      id: device.device_id,
+      name: device.device_name,
+      type: device.device_type,
+    }));
+    
+    return {
+      ...response,
+      devices,
+      total: devices.length, // Add total for backward compatibility
+    };
   }
 
   // ========== ASSET DATA ENDPOINTS ==========

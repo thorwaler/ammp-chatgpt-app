@@ -160,6 +160,11 @@ export interface Device {
   model?: string;
   status?: 'online' | 'offline' | 'error';
   last_communication?: string;
+  capacity_kw?: number;
+  // Backward compatibility aliases
+  id?: string; // Alias for device_id
+  name?: string; // Alias for device_name
+  type?: 'pv-inverter' | 'battery-system' | 'meter' | 'genset' | 'sensor'; // Alias for device_type
 }
 
 export interface DevicesResponse {
@@ -181,6 +186,7 @@ export interface DevicesResponse {
   expected_pr: number;
   warnings: string[];
   devices: Device[];
+  total?: number; // Backward compatibility - computed from devices.length
 }
 
 // Weather / Environment Types
