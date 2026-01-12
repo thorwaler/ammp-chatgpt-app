@@ -85,6 +85,11 @@ export interface EnergyDataResponse {
   data: EnergyDataPoint[];
   total_energy_kwh?: number;
   asset_id?: string;
+  asset_name?: string;
+  units?: Record<string, string>;
+  // Backward compatibility aliases
+  site_id?: string; // Alias for asset_id
+  site_name?: string; // Alias for asset_name
 }
 
 // Alerts / Tickets Types
@@ -148,6 +153,12 @@ export interface PerformanceResponse {
   data: PerformanceMetrics[];
   averages?: PerformanceMetrics;
   asset_id?: string;
+  asset_name?: string;
+  // Backward compatibility aliases
+  metrics?: PerformanceMetrics[]; // Alias for data
+  portfolio_summary?: PerformanceMetrics; // Alias for averages
+  site_id?: string; // Alias for asset_id
+  site_name?: string; // Alias for asset_name
 }
 
 // Device Types
