@@ -146,7 +146,7 @@ export interface PerformanceRequest {
   site_id?: string; // @deprecated - for backward compatibility, use asset_id
   start_date: string;
   end_date: string;
-  aggregation?: 'daily' | 'monthly' | 'total';
+  aggregation?: 'daily' | 'weekly' | 'monthly' | 'total';
 }
 
 export interface PerformanceResponse {
