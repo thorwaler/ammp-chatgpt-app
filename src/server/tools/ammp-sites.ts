@@ -43,13 +43,12 @@ export async function listSitesHandler() {
       })),
     };
 
-    // Create a formatted text summary
-    const sitesList = sitesResponse.sites
+    // Create a formatted text summary from structuredContent
+    const sitesList = structuredContent.sites
       .map(site => {
         const capacity = site.capacity_kw ? `${site.capacity_kw} kW` : 'Unknown';
-        const status = site.status ? `(${site.status})` : '';
-        const location = site.location?.address ? ` - ${site.location.address}` : '';
-        return `• ${site.name}: ${capacity} ${status}${location}`;
+        const location = site.location ? ` - ${site.location.place}, ${site.location.country}` : '';
+        return `• ${site.name}: ${capacity}${location}`;
       })
       .join('\n');
 
@@ -57,7 +56,7 @@ export async function listSitesHandler() {
       content: [
         {
           type: 'text' as const,
-          text: `Found ${sitesResponse.sites.length} AMMP sites:\n\n${sitesList}`,
+          text: `Found ${structuredContent.total_sites} AMMP assets:\n\n${sitesList}`,
         },
       ],
       structuredContent,

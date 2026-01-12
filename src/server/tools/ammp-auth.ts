@@ -51,7 +51,7 @@ export async function authenticateAmmpHandler(args: { api_key: string }) {
       content: [
         {
           type: 'text' as const,
-          text: `Successfully authenticated with AMMP API. Found ${sitesResponse.sites.length} accessible sites:\n\n${sitesResponse.sites.map(s => `• ${s.name} (${s.capacity_kw ? s.capacity_kw + ' kW' : 'Unknown capacity'})`).join('\n')}`,
+          text: `Successfully authenticated with AMMP API. Found ${assets.length} accessible assets:\n\n${assets.map(a => `• ${a.asset_name} (${a.total_pv_power ? a.total_pv_power + ' kW' : 'Unknown capacity'})`).join('\n')}`,
         },
       ],
       structuredContent,
