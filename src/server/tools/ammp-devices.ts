@@ -33,8 +33,12 @@ export async function getDevicesHandler(args: { site_id: string }) {
     };
 
     devicesResponse.devices.forEach(device => {
-      typeCounts[device.type] = (typeCounts[device.type] || 0) + 1;
-      statusCounts[device.status]++;
+      const type = device.type || 'unknown';
+      const status = device.status || 'offline';
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+      if (status === 'online' || status === 'offline' || status === 'error') {
+        statusCounts[status === 'error' ? 'fault' : status]++;
+      }
     });
 
     const structuredContent = {
@@ -73,16 +77,17 @@ export async function getDevicesHandler(args: { site_id: string }) {
     if (devicesResponse.devices.length > 0) {
       summary += `Device Details:\n\n`;
       devicesResponse.devices.forEach((device, idx) => {
-        const statusIcon = device.status === 'online' ? '✅' : device.status === 'fault' ? '⚠️' : '🔴';
-        summary += `${idx + 1}. ${statusIcon} ${device.name}\n`;
-        summary += `   Type: ${device.type}\n`;
+        const status = device.status || 'offline';
+        const statusIcon = status === 'online' ? '✅' : status === 'error' ? '⚠️' : '🔴';
+        summary += `${idx + 1}. ${statusIcon} ${device.name || 'Unknown Device'}\n`;
+        summary += `   Type: ${device.type || 'unknown'}\n`;
         if (device.manufacturer || device.model) {
           summary += `   Model: ${device.manufacturer || ''} ${device.model || ''}`.trim() + '\n';
         }
         if (device.capacity_kw) {
           summary += `   Capacity: ${device.capacity_kw} kW\n`;
         }
-        summary += `   Status: ${device.status}\n`;
+        summary += `   Status: ${status}\n`;
         if (device.last_communication) {
           const lastComm = new Date(device.last_communication).toLocaleString();
           summary += `   Last Communication: ${lastComm}\n`;
